@@ -42,20 +42,20 @@ class BIMGestureLogic {
     double pinkyCurl  = _curlAmount(landmarks, HandLandmark.pinkyMcp,  HandLandmark.pinkyPip,  HandLandmark.pinkyTip);
 
     // ── Touch detections ──────────────────────────────────────────────────
-    bool thumbIndexTouch   = _isTouching(landmarks[HandLandmark.thumbTip.index], landmarks[HandLandmark.indexTip.index],  palmSize, 0.5);
+    bool thumbIndexTouch   = _isTouching(landmarks[HandLandmark.thumbTip.index], landmarks[HandLandmark.indexTip.index],  palmSize, 0.4);
     bool thumbMiddleTouch  = _isTouching(landmarks[HandLandmark.thumbTip.index], landmarks[HandLandmark.middleTip.index], palmSize, 0.5);
     bool thumbRingTouch    = _isTouching(landmarks[HandLandmark.thumbTip.index], landmarks[HandLandmark.ringTip.index],   palmSize, 0.4);
     bool thumbPinkyTouch   = _isTouching(landmarks[HandLandmark.thumbTip.index], landmarks[HandLandmark.pinkyTip.index],  palmSize, 0.4);
-    bool thumbToMiddleSide = _isTouching(landmarks[HandLandmark.thumbTip.index], landmarks[HandLandmark.middlePip.index], palmSize, 0.5);
+    bool thumbToIndexPip   = _isTouching(landmarks[HandLandmark.thumbTip.index], landmarks[HandLandmark.indexPip.index],  palmSize, 0.7);
 
-    // K: thumb between index and middle base
+    // K: thumb tip near the base BETWEEN index and middle MCPs
     Point3D indexMiddleBase = Point3D(
       (landmarks[HandLandmark.indexMcp.index].x + landmarks[HandLandmark.middleMcp.index].x) / 2,
       (landmarks[HandLandmark.indexMcp.index].y + landmarks[HandLandmark.middleMcp.index].y) / 2,
       (landmarks[HandLandmark.indexMcp.index].z + landmarks[HandLandmark.middleMcp.index].z) / 2,
     );
-bool thumbAtIndexMiddleBase = landmarks[HandLandmark.thumbTip.index]
-    .distanceTo(indexMiddleBase) < palmSize * 0.5;
+    bool thumbAtIndexMiddleBase = landmarks[HandLandmark.thumbTip.index]
+        .distanceTo(indexMiddleBase) < palmSize * 0.6;
 
     // ── Spreads ───────────────────────────────────────────────────────────
     double indexMiddleSpread = landmarks[HandLandmark.indexTip.index]
@@ -67,12 +67,8 @@ bool thumbAtIndexMiddleBase = landmarks[HandLandmark.thumbTip.index]
     bool isSideways     = _isPointingSideways(landmarks);
     bool isPointingDown = _isPointingDownwards(landmarks, palmSize);
 
-    // Palm vs back of hand facing camera
-    // When palm faces camera: thumbMcp Y > indexMcp Y (in swapped axes)
-    bool isPalmFacing = landmarks[HandLandmark.thumbMcp.index].y
-    < landmarks[HandLandmark.indexMcp.index].y;
-
-    // ── X detection ───────────────────────────────────────────────────────
+    // ── X: index PARTIALLY bent (not fully extended, not fully curled) ─────
+    // Must be the only non-curled finger
     double indexAngle = _getAngle(
       landmarks[HandLandmark.indexMcp.index],
       landmarks[HandLandmark.indexPip.index],
@@ -86,73 +82,72 @@ bool thumbAtIndexMiddleBase = landmarks[HandLandmark.thumbTip.index]
     // RECOGNITION
     // =====================================================================
 
-    // ── Special combos ────────────────────────────────────────────────────
     if (isThumbExt && isIndexExt && !isMiddleExt && !isRingExt && isPinkyExt) return "I Love You ❤️";
     if (isThumbExt && isPinkyExt && !isIndexExt && !isMiddleExt && !isRingExt) return "Y";
     if (isPinkyExt && !isIndexExt && !isMiddleExt && !isRingExt && !isThumbExt) return "I";
 
-    if (isThumbExt && isIndexExt && isMiddleExt && isRingExt && isPinkyExt) return "5";
+    if (isThumbExt && isIndexExt && isMiddleExt && isRingExt && isPinkyExt) {
+      if (indexPinkySpread > palmSize * 1.4) return "5 / Stop";
+      return "B";
+    }
 
-    // 4: index+middle+ring+pinky, no thumb, back of hand
-if (!isThumbExt && isIndexExt && isMiddleExt && isRingExt && isPinkyExt && !isPalmFacing) return "4";
-
-// 5: all 4 fingers up, back of hand (already handled above with thumb)
-if (!isThumbExt && isIndexExt && isMiddleExt && isRingExt && isPinkyExt) return "B";
-
-    // ── F/9: Thumb+Index pinch, 3 fingers up ─────────────────────────────
+    if (!isThumbExt && isIndexExt && isMiddleExt && isRingExt && isPinkyExt) return "B";
     if (thumbIndexTouch && !isIndexExt && isMiddleExt && isRingExt && isPinkyExt) return "F / 9";
-
-    // ── Number touches ────────────────────────────────────────────────────
     if (thumbPinkyTouch && isIndexExt && isMiddleExt && isRingExt && !isPinkyExt) return "6";
     if (thumbRingTouch  && isIndexExt && isMiddleExt && !isRingExt && isPinkyExt) return "7";
     if (thumbMiddleTouch && isIndexExt && !isMiddleExt && isRingExt && isPinkyExt) return "8";
+    if (!isThumbExt && isIndexExt && isMiddleExt && isRingExt && !isPinkyExt) return "W";
 
-    // W: index+middle+ring, no pinky, palm facing
-if (!isThumbExt && isIndexExt && isMiddleExt && isRingExt && !isPinkyExt) return "W";
-
-// 4: index+middle+ring+pinky, no thumb, back of hand
-if (!isThumbExt && isIndexExt && isMiddleExt && isRingExt && isPinkyExt && !isPalmFacing) return "4";
-
-    // ── P: index+middle+thumb pointing DOWN ──────────────────────────────
+    // P: index+middle+thumb pointing DOWN
     if (isThumbExt && isIndexExt && isMiddleExt && !isRingExt && !isPinkyExt && isPointingDown) return "P";
-    
 
-    // ── 3: thumb+index+middle, back of hand OR no special touch ───────────
-    if (isThumbExt && isIndexExt && isMiddleExt && !isRingExt && !isPinkyExt) {
-      if (!isPalmFacing) return "3";
-      return "3";
-    }
+    // K: index+middle up, thumb between index and middle base
+    // FIX: removed isThumbExt requirement — K thumb doesn't extend far
+    if (isIndexExt && isMiddleExt && !isRingExt && !isPinkyExt && thumbAtIndexMiddleBase) return "K";
 
-    // ── Q: index+thumb pointing down ─────────────────────────────────────
+    // 3: thumb+index+middle, no special touch
+    if (isThumbExt && isIndexExt && isMiddleExt && !isRingExt && !isPinkyExt) return "3";
+
+    // Q: index+thumb pointing down
     if (isThumbExt && isIndexExt && !isMiddleExt && !isRingExt && !isPinkyExt && isPointingDown) return "Q";
 
-    // ── G: index+thumb sideways ───────────────────────────────────────────
+    // G: index+thumb sideways
     if (isThumbExt && isIndexExt && !isMiddleExt && !isRingExt && !isPinkyExt && isSideways) return "G";
 
-    // ── L: index+thumb pointing up ────────────────────────────────────────
+    // L: index+thumb up
     if (isThumbExt && isIndexExt && !isMiddleExt && !isRingExt && !isPinkyExt) return "L";
 
-    // ── H / R / V / 2 / U: index+middle, no thumb ────────────────────────
+    // Thumb only
+    // Thumb only = A
+if (isThumbExt && !isIndexExt && !isMiddleExt && !isRingExt && !isPinkyExt) {
+  return "A";
+}
+
+// O / 0 — thumb+index pinch, all others curled
+if (thumbIndexTouch && !isIndexExt && !isMiddleExt && !isRingExt && !isPinkyExt) return "O / 0";
+
+    // H / R / V / U — two fingers, no thumb
     if (!isThumbExt && isIndexExt && isMiddleExt && !isRingExt && !isPinkyExt) {
-      if (!isPalmFacing) return "2";
       if (isSideways) return "H";
       if (_isCrossed(landmarks)) return "R";
-      if (indexMiddleSpread > palmSize * 0.4) return "V";
+      if (indexMiddleSpread > palmSize * 0.4) return "V / 2";
       return "U";
     }
 
-    // K: index+middle up, thumb between index and middle tips, palm facing
-if (isIndexExt && isMiddleExt && !isRingExt && !isPinkyExt && thumbAtIndexMiddleBase && isPalmFacing) return "K";
-
-    // ── X: hooked index ───────────────────────────────────────────────────
+    // X — check here: index partially bent, others fully curled
     if (isX) return "X";
 
-    // ── D / 1: index only ─────────────────────────────────────────────────
-    if (isIndexExt && !isMiddleExt && !isRingExt && !isPinkyExt) {
-      if (isPalmFacing && thumbToMiddleSide) return "D";
-      if (!isPalmFacing) return "1";
-      return "D";
+    // D / 1 — index only, no thumb
+    if (!isThumbExt && isIndexExt && !isMiddleExt && !isRingExt && !isPinkyExt) {
+      if (thumbToIndexPip) return "D";
+      return "1";
     }
+
+    // O / 0
+    if (thumbIndexTouch && !isMiddleExt && !isRingExt && !isPinkyExt) return "O / 0";
+
+    // C
+    if (_isCurved(landmarks, palmSize)) return "C";
 
     // ── Fist group: S, E, M, N, T, A ─────────────────────────────────────
     if (!isIndexExt && !isMiddleExt && !isRingExt && !isPinkyExt) {
@@ -167,29 +162,18 @@ if (isIndexExt && isMiddleExt && !isRingExt && !isPinkyExt && thumbAtIndexMiddle
       );
       double thumbToMid = landmarks[HandLandmark.thumbTip.index].distanceTo(midKnuckle) / palmSize;
 
-      // S: thumb wraps OVER fingers — check first
-// S thumb is close to middle knuckle area
-bool thumbAboveFingers = landmarks[HandLandmark.thumbTip.index].y
-    < landmarks[HandLandmark.indexPip.index].y;
-if (allCurled && thumbAboveFingers && thumbToMid < 0.55) return "S";
+      // S: thumb on top of knuckles
+      // In swapped axes: "on top" means thumb X > indexPip X
+      bool thumbOnTop = landmarks[HandLandmark.thumbTip.index].x
+          > landmarks[HandLandmark.indexPip.index].x - (palmSize * 0.15);
+      if (allCurled && thumbOnTop && thumbToMid < 0.65) return "S";
 
-// E: fingers curl over thumb — thumb is lower, NOT close to knuckles
-bool thumbBelowFingers = landmarks[HandLandmark.thumbTip.index].y
-    > landmarks[HandLandmark.indexPip.index].y;
-bool veryTightlyCurled = indexCurl > 0.6 && middleCurl > 0.6
-    && ringCurl > 0.6 && pinkyCurl > 0.6;
-if (veryTightlyCurled && thumbBelowFingers && thumbToMid > 0.4) return "E";
-
-// O / 0 — all fingers curled, pinky tip close to thumb tip
-bool thumbPinkyClose = landmarks[HandLandmark.thumbTip.index]
-    .distanceTo(landmarks[HandLandmark.pinkyTip.index]) < palmSize * 0.5;
-if (thumbPinkyClose && middleCurl > 0.5 && ringCurl > 0.5 && pinkyCurl > 0.5) return "O / 0";
-
-// ── C ─────────────────────────────────────────────────────────────────
-    if (_isCurved(landmarks, palmSize)) return "C";
-
-    // ── Thumb only = A ────────────────────────────────────────────────────
-    if (isThumbExt && !isIndexExt && !isMiddleExt && !isRingExt && !isPinkyExt) return "A";
+      // E: very tight curl, thumb NOT on top (thumb X < indexPip X)
+      bool veryTightlyCurled = indexCurl > 0.6 && middleCurl > 0.6
+          && ringCurl > 0.6 && pinkyCurl > 0.6;
+      bool thumbNotOnTop = landmarks[HandLandmark.thumbTip.index].x
+          < landmarks[HandLandmark.indexPip.index].x;
+      if (veryTightlyCurled && thumbNotOnTop) return "E";
 
       // M, N, T, A
       double thumbScore  = _getThumbwardScore(landmarks[HandLandmark.thumbTip.index], landmarks);
@@ -242,21 +226,15 @@ if (thumbPinkyClose && middleCurl > 0.5 && ringCurl > 0.5 && pinkyCurl > 0.5) re
     double ma=_getAngle(lm[HandLandmark.middleMcp.index],lm[HandLandmark.middlePip.index],lm[HandLandmark.middleTip.index]);
     double ra=_getAngle(lm[HandLandmark.ringMcp.index],  lm[HandLandmark.ringPip.index],  lm[HandLandmark.ringTip.index]);
     double pa=_getAngle(lm[HandLandmark.pinkyMcp.index], lm[HandLandmark.pinkyPip.index], lm[HandLandmark.pinkyTip.index]);
-    bool allCurved = ia>70&&ia<160 && ma>70&&ma<160 && ra>70&&ra<160 && pa>70&&pa<160;
+    bool allCurved = ia>85&&ia<145 && ma>85&&ma<145 && ra>85&&ra<145 && pa>85&&pa<145;
     return allCurved && lm[HandLandmark.thumbTip.index]
-    .distanceTo(lm[HandLandmark.indexTip.index]) > palmSize * 0.5;
+        .distanceTo(lm[HandLandmark.indexTip.index]) > palmSize * 0.6;
   }
 
   static bool _isCrossed(List<Point3D> lm) {
-  // R: index crosses IN FRONT of middle
-  // Check both Z depth and X/Y proximity of the two finger tips
-  double spread = lm[HandLandmark.indexTip.index]
-      .distanceTo(lm[HandLandmark.middleTip.index]);
-  double palmSize = lm[HandLandmark.wrist.index]
-      .distanceTo(lm[HandLandmark.middleMcp.index]);
-  // Fingers are crossed when tips are very close together
-  return spread < palmSize * 0.25;
-}
+    return _getThumbwardScore(lm[HandLandmark.indexTip.index], lm)
+         < _getThumbwardScore(lm[HandLandmark.middleTip.index], lm);
+  }
 
   static bool _isPointingSideways(List<Point3D> lm) {
     double dx = (lm[HandLandmark.indexTip.index].y - lm[HandLandmark.indexMcp.index].y).abs();
