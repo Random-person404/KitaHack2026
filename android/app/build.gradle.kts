@@ -3,6 +3,7 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -16,12 +17,12 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+        jvmTarget = "17"
     }
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.kitahack"
+        applicationId = "minichatseeker.ASLtranslator"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -41,4 +42,15 @@ android {
 
 flutter {
     source = "../.."
+}
+
+// Add this at the very bottom of the file
+dependencies {
+    // Import the Firebase BoM (Bill of Materials)
+    // This ensures all your Firebase libraries use compatible versions
+    implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
+
+    // Add the dependency for the Firebase SDK for Google Analytics
+    // (Optional, but good for hackathon metrics!)
+    implementation("com.google.firebase:firebase-analytics")
 }

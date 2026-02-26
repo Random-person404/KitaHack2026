@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "173688024632",
+    "project_id": "asl-translator-448f0",
+    "storage_bucket": "asl-translator-448f0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:173688024632:android:adc8eebe8bd5e3b03700cd",
+        "android_client_info": {
+          "package_name": "minichatseeker.ASLtranslator"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPqABTJedcN725i6zm3nsJqMlUSaaknqc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
