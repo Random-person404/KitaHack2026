@@ -55,17 +55,17 @@ class _HandDetectionScreenState extends State<HandDetectionScreen> {
   bool _isSendingToGemini = false;
 
   // Letter accumulation
-  String _letterBuffer     = "";   // letters typed so far in current word
-  String _fullSentence     = "";   // all confirmed words
-  String _lastAddedLetter  = "";   // prevent duplicate consecutive letters
+  String _letterBuffer    = "";
+  String _fullSentence    = "";
+  String _lastAddedLetter = "";
   int    _stableFrameCount = 0;
-  int    _noHandFrameCount = 0;    // frames with no hand detected
+  int    _noHandFrameCount = 0;
   String _prevGesture      = "";
 
   // Timing
-  static const int _stableFramesNeeded = 8;  // frames before letter is confirmed
-  static const int _noHandFramesForWord = 15; // no hand for ~1.5s = end of word
-  static const int _noHandFramesForSend = 30; // no hand for ~3s = send to Gemini
+  static const int _stableFramesNeeded  = 8;
+  static const int _noHandFramesForWord = 15;
+  static const int _noHandFramesForSend = 30;
 
   @override
   void initState() {
@@ -74,12 +74,12 @@ class _HandDetectionScreenState extends State<HandDetectionScreen> {
   }
 
   Future<void> _initialize() async {
-    _plugin = HandLandmarkerPlugin.create(numHands: 2, delegate: HandLandmarkerDelegate.cpu);
+    _plugin = HandLandmarkerPlugin.create(numHands: 1, delegate: HandLandmarkerDelegate.gpu);
     final back = _cameras.firstWhere(
       (c) => c.lensDirection == CameraLensDirection.back,
       orElse: () => _cameras.first,
     );
-    _controller = CameraController(back, ResolutionPreset.medium, enableAudio: false);
+    _controller = CameraController(back, ResolutionPreset.low, enableAudio: false);
     await _controller!.initialize();
     if (mounted) {
       setState(() {});
@@ -95,26 +95,27 @@ class _HandDetectionScreenState extends State<HandDetectionScreen> {
       final results = _plugin!.detect(image, _controller!.description.sensorOrientation);
 
       if (results.isEmpty || results[0].landmarks.isEmpty) {
-  _noHandFrameCount++;
-  debugPrint('🚫 No hand: $_noHandFrameCount');
-  _stableFrameCount = 0;
-  _prevGesture = "";
+        _noHandFrameCount++;
+        _stableFrameCount = 0;
+        _prevGesture = "";
 
-  if (_noHandFrameCount >= _noHandFramesForWord && _noHandFrameCount < _noHandFramesForWord + 2 && _letterBuffer.isNotEmpty) {
-  _addSpace();
-}
+        if (_noHandFrameCount >= _noHandFramesForWord &&
+            _noHandFrameCount < _noHandFramesForWord + 2 &&
+            _letterBuffer.isNotEmpty) {
+          _addSpace();
+        }
 
-if (_noHandFrameCount >= _noHandFramesForSend && _noHandFrameCount < _noHandFramesForSend + 2) {
-  debugPrint('🔵 Reached 90 frames! Sentence: "$_fullSentence" Buffer: "$_letterBuffer"');
-  if (_fullSentence.trim().isNotEmpty || _letterBuffer.isNotEmpty) {
-    _sendToGemini();
-  }
-}
+        if (_noHandFrameCount >= _noHandFramesForSend &&
+            _noHandFrameCount < _noHandFramesForSend + 2) {
+          if (_fullSentence.trim().isNotEmpty || _letterBuffer.isNotEmpty) {
+            _sendToGemini();
+          }
+        }
 
-  _detectedSign.value = "";
-  setState(() { _hands = []; });
-  return;
-}
+        _detectedSign.value = "";
+        setState(() { _hands = []; });
+        return;
+      }
 
       _noHandFrameCount = 0;
 
@@ -125,7 +126,6 @@ if (_noHandFrameCount >= _noHandFramesForSend && _noHandFrameCount < _noHandFram
       final gesture = _smoother.getSmoothedGesture(BIMGestureLogic.recognize(landmarks));
       _detectedSign.value = gesture;
 
-      // Count stable frames for same gesture
       if (gesture == _prevGesture && gesture.isNotEmpty && gesture != "Detecting...") {
         _stableFrameCount++;
       } else {
@@ -133,7 +133,6 @@ if (_noHandFrameCount >= _noHandFramesForSend && _noHandFrameCount < _noHandFram
         _prevGesture = gesture;
       }
 
-      // Confirm letter after held for enough frames
       if (_stableFrameCount == _stableFramesNeeded) {
         _confirmLetter(gesture);
       }
@@ -147,18 +146,20 @@ if (_noHandFrameCount >= _noHandFramesForSend && _noHandFrameCount < _noHandFram
   }
 
   void _confirmLetter(String gesture) {
-    // Skip non-letter gestures and duplicates
-     debugPrint('🔤 Confirming: $gesture | last: $_lastAddedLetter');
     if (gesture.isEmpty || gesture == "Detecting..." || gesture == _lastAddedLetter) return;
 
-    // Only add single letters (A-Z), not phrases like "I Love You"
-    final isLetter = gesture.length == 1 && gesture.contains(RegExp(r'[A-Z]'));
-    if (!isLetter) return;
+    // Extract the main character from ambiguous signs like F/9, V/2, O/0
+    final cleanGesture = gesture.split('/')[0].trim();
 
-    _lastAddedLetter = gesture;
-    _letterBuffer += gesture;
+    // Accept single letters A-Z and single digits 0-9
+    final isValid = cleanGesture.length == 1 &&
+        cleanGesture.contains(RegExp(r'[A-Z0-9]'));
+    if (!isValid) return;
+
+    _lastAddedLetter = gesture; // keep original for duplicate check
+    _letterBuffer += cleanGesture;
     _currentWord.value = _letterBuffer;
-    debugPrint('✅ Letter confirmed: $gesture | Word so far: $_letterBuffer');
+    debugPrint('✅ Letter confirmed: $cleanGesture | Word so far: $_letterBuffer');
   }
 
   void _addSpace() {
@@ -171,37 +172,35 @@ if (_noHandFrameCount >= _noHandFramesForSend && _noHandFrameCount < _noHandFram
   }
 
   Future<void> _sendToGemini() async {
-  if (_isSendingToGemini) return; // prevent repeated calls
-  _isSendingToGemini = true;
+    if (_isSendingToGemini) return;
+    _isSendingToGemini = true;
 
-  if (_letterBuffer.isNotEmpty) {
-    _fullSentence += _letterBuffer + " ";
-    _letterBuffer = "";
-    _currentWord.value = "";
-  }
+    if (_letterBuffer.isNotEmpty) {
+      _fullSentence += _letterBuffer + " ";
+      _letterBuffer = "";
+      _currentWord.value = "";
+    }
 
-  final toSend = _fullSentence.trim();
-  if (toSend.isEmpty) {
+    final toSend = _fullSentence.trim();
+    if (toSend.isEmpty) {
+      _isSendingToGemini = false;
+      _isAiLoading.value = false;
+      return;
+    }
+
+    debugPrint('🔵 Sending to Gemini: "$toSend"');
+    _isAiLoading.value = true;
+
+    final result = await _aiService.getSentenceCorrection(toSend);
+
+    _isAiLoading.value = false;
     _isSendingToGemini = false;
-     _isAiLoading.value = false;
-    return;
+
+    if (result != null && mounted) {
+      _aiSentence.value = result;
+      debugPrint('✅ Gemini result: $result');
+    }
   }
-
-  debugPrint('🔵 Sending to Gemini: "$toSend"');
-  _isAiLoading.value = true;
-
-  debugPrint('⏳ Waiting for Gemini...');
-final result = await _aiService.getSentenceCorrection(toSend);
-debugPrint('📥 Raw result: $result');
-
-  _isAiLoading.value = false;
-  _isSendingToGemini = false;
-
-  if (result != null && mounted) {
-    _aiSentence.value = result;
-    debugPrint('✅ Gemini result: $result');
-  }
-}
 
   void _clearAll() {
     _letterBuffer = "";
@@ -210,7 +209,8 @@ debugPrint('📥 Raw result: $result');
     _prevGesture = "";
     _stableFrameCount = 0;
     _noHandFrameCount = 0;
-    _isSendingToGemini = false;  // ADD THIS
+    _isSendingToGemini = false;
+    _isAiLoading.value = false;
     _currentWord.value = "";
     _aiSentence.value = "";
     _detectedSign.value = "";
@@ -228,10 +228,7 @@ debugPrint('📥 Raw result: $result');
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Camera
           CameraPreview(_controller!),
-
-          // Landmarks
           CustomPaint(painter: HandPainter(_hands)),
 
           // Top: current detected sign
@@ -288,7 +285,7 @@ debugPrint('📥 Raw result: $result');
             ),
           ),
 
-          // Bottom: Gemini sentence output
+          // Bottom: Gemini output
           Positioned(
             bottom: 40,
             left: 20,
@@ -303,14 +300,11 @@ debugPrint('📥 Raw result: $result');
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Hint text
                   const Text(
-                    "Lower hand for 3s to translate",
+                    "Lower hand to translate",
                     style: TextStyle(color: Colors.white38, fontSize: 12),
                   ),
                   const SizedBox(height: 8),
-
-                  // Loading or result
                   ValueListenableBuilder<bool>(
                     valueListenable: _isAiLoading,
                     builder: (_, loading, __) {
