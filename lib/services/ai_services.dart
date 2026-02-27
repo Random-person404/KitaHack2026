@@ -16,7 +16,7 @@ class AIService {
        model: _modelName,
         generationConfig: GenerationConfig(
           temperature: 0.1,
-          maxOutputTokens: 100,
+          maxOutputTokens: 150,
         ),
         systemInstruction: Content.system("""
 You are an ASL fingerspelling interpreter.
@@ -29,12 +29,13 @@ Rules:
 - Output ONLY the final sentence, nothing else
 - Keep it short and natural
 - If the input is a single word, just return that word properly capitalized
-- If the input looks like a name, code, or hashtag (like KITAHACK2026), keep it exactly as typed but with proper casing
+- If the input is KITAHACK2026 or KITAHACK2O26, return KITAHACK2026
 
 Examples:
-Input: "HELLO WORLD" → Output: Hello world.
-Input: "I NEEd HELP" → Output: I need help.
-Input: "MY NAEM IS ALI" → Output: My name is Ali.
+Input: "HELLO" → Output: Hello!
+Input: "I NEED HELP" → Output: I need help.
+Input: "KITAHACK2O26" → Output: KitaHack2026
+Input: "KITAHACK2026" → Output: KitaHack2026
 Input: "THNK YOU" → Output: Thank you.
         """),
       );
