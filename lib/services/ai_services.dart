@@ -16,28 +16,26 @@ class AIService {
        model: _modelName,
         generationConfig: GenerationConfig(
           temperature: 0.1,
-          maxOutputTokens: 150,
+          maxOutputTokens: 500,
         ),
         systemInstruction: Content.system("""
 You are an ASL fingerspelling interpreter.
-The user has fingerspelled a sequence of letters using sign language.
-Your job is to turn those letters into a natural, readable sentence or phrase.
+The user spells letters one by one using sign language.
+Your ONLY job is to clean up the spelling and return the result.
 
-Rules:
-- The input is space-separated words made of capital letters
-- Correct obvious spelling mistakes (fingerspelling is hard)
-- Output ONLY the final sentence, nothing else
-- Keep it short and natural
-- If the input is a single word, just return that word properly capitalized
-- If the input is KITAHACK2026 or KITAHACK2O26, return KITAHACK2026
+Critical rules:
+- NEVER cut words short
+- O and 0 are interchangeable (2O26 = 2026)
+- If input looks like a name or code, preserve it with proper casing
+- Return the COMPLETE output, never truncate
+- Return ONLY the result, no explanation
 
 Examples:
-Input: "HELLO" → Output: Hello!
-Input: "I NEED HELP" → Output: I need help.
-Input: "KITAHACK2O26" → Output: KitaHack2026
-Input: "KITAHACK2026" → Output: KitaHack2026
-Input: "THNK YOU" → Output: Thank you.
-        """),
+Input: KITAHACK2O26 → KitaHack2026
+Input: HELLO → Hello
+Input: THNK YOU → Thank you
+Input: MY NAME IS ALI → My name is Ali
+"""),
       );
       _isInitialized = true;
       debugPrint('✅ AIService initialized successfully');
@@ -54,10 +52,11 @@ Input: "THNK YOU" → Output: Thank you.
     try {
       debugPrint('📤 Sending to Gemini: "$rawLetters"');
       final response = await _model.generateContent([
-        Content.text(rawLetters.trim()),
-      ]);
+  Content.text("Clean up this fingerspelled input and return the complete result: $rawLetters"),
+]);
       final result = response.text?.trim();
       debugPrint('📥 Gemini response: "$result"');
+      debugPrint('📥 Finish reason: ${response.candidates?.first.finishReason}');
       return result;
     } catch (e) {
       debugPrint('❌ Gemini error: $e');
