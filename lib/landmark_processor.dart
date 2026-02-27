@@ -13,10 +13,6 @@ class LandmarkProcessor {
   static const _middleMCP = 9;
   static const _ringMCP = 13;
   static const _pinkyMCP = 17;
-  static const _indexPIP = 6;
-  static const _middlePIP = 10;
-  static const _ringPIP = 14;
-  static const _pinkyPIP = 18;
 
   static String process(List<Point3D> landmarks) {
     if (landmarks.length < 21) return 'invalid';
@@ -37,10 +33,6 @@ class LandmarkProcessor {
     // Thumb position relative to palm
     final thumbUp = landmarks[_thumbTip].y < wrist.y;
     final thumbAcrossPalm = landmarks[_thumbTip].x > landmarks[_indexMCP].x;
-
-    // Curl amounts (0.0 = fully extended, 1.0 = fully curled)
-    final indexCurl = _curlAmount(landmarks, _indexTip, _indexPIP, _indexMCP);
-    final middleCurl = _curlAmount(landmarks, _middleTip, _middlePIP, _middleMCP);
 
     // Create a simplified "signature" that's stable across frames
     final signature = _createGestureSignature(
@@ -103,8 +95,4 @@ class LandmarkProcessor {
     return (dx * dx + dy * dy).clamp(0, 1).toDouble();
   }
 
-  static double _curlAmount(List<Point3D> lm, int tip, int pip, int mcp) {
-    // How much is the finger curled — tip below PIP means curled
-    return (lm[tip].y - lm[pip].y).clamp(0.0, 1.0);
-  }
 }
