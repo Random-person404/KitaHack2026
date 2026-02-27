@@ -383,7 +383,7 @@ class _HandDetectionScreenState extends State<HandDetectionScreen>
           // ── Big detected letter center ────────────────────────────────
           Positioned(
             top: 100,
-            left: 0,
+            left: 0, //changed
             right: 0,
             child: Center(
               child: ValueListenableBuilder<String>(
