@@ -81,9 +81,9 @@ class _HandDetectionScreenState extends State<HandDetectionScreen>
   int    _noHandFrameCount = 0;
   String _prevGesture      = "";
 
-  static const int _stableFramesNeeded  = 8;
-  static const int _noHandFramesForWord = 15;
-  static const int _noHandFramesForSend = 30;
+  static const int _stableFramesNeeded  = 15;
+  static const int _noHandFramesForWord = 30; 
+  static const int _noHandFramesForSend = 60; 
 
   late AnimationController _pulseController;
   late AnimationController _letterPopController;
