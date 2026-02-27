@@ -29,6 +29,7 @@ Rules:
 - Output ONLY the final sentence, nothing else
 - Keep it short and natural
 - If the input is a single word, just return that word properly capitalized
+- If the input looks like a name, code, or hashtag (like KITAHACK2026), keep it exactly as typed but with proper casing
 
 Examples:
 Input: "HELLO WORLD" → Output: Hello world.
