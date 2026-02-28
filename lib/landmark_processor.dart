@@ -1,7 +1,6 @@
 import 'gestures_logic.dart';
 
 class LandmarkProcessor {
-  // MediaPipe hand landmark indices
   static const _wrist = 0;
   static const _thumbTip = 4;
   static const _indexTip = 8;
@@ -26,7 +25,7 @@ class LandmarkProcessor {
     final ringExtended = _isFingerExtended(landmarks, _ringTip, _ringMCP);
     final pinkyExtended = _isFingerExtended(landmarks, _pinkyTip, _pinkyMCP);
 
-    // Finger spread — are index and middle separated?
+    // Finger spread
     final indexMiddleSpread = _spread(landmarks[_indexTip], landmarks[_middleTip]);
     final indexPinkySpread = _spread(landmarks[_indexTip], landmarks[_pinkyTip]);
 
@@ -34,7 +33,7 @@ class LandmarkProcessor {
     final thumbUp = landmarks[_thumbTip].y < wrist.y;
     final thumbAcrossPalm = landmarks[_thumbTip].x > landmarks[_indexMCP].x;
 
-    // Create a simplified "signature" that's stable across frames
+    // Create a simplified signature
     final signature = _createGestureSignature(
       thumbExtended,
       indexExtended,
@@ -47,11 +46,11 @@ class LandmarkProcessor {
       indexPinkySpread > 0.04,
     );
 
-    // Return the signature (this is what gets compared for stability)
+    // Return the signature
     return signature;
   }
 
-  // Create a stable gesture signature that doesn't change every frame
+  // stable gesture signature 
   static String _createGestureSignature(
     bool thumbExt,
     bool indexExt,
@@ -63,11 +62,9 @@ class LandmarkProcessor {
     bool indexMiddleSpread,
     bool indexPinkySpread,
   ) {
-    // Create a simple code like "ECCC-US"
-    // Each letter = E (extended) or C (curled)
-    // Thumb direction = U (up) or D (down)
-    // Spread = S (spread) or N (not spread)
-    
+  // Each letter = E (extended) or C (curled)
+  // Thumb direction = U (up) or D (down)
+  // Spread = S (spread) or N (not spread)
     final t = thumbExt ? 'E' : 'C';
     final i = indexExt ? 'E' : 'C';
     final m = middleExt ? 'E' : 'C';
@@ -81,7 +78,7 @@ class LandmarkProcessor {
   }
 
   static bool _isFingerExtended(List<Point3D> lm, int tip, int mcp) {
-    // Tip is higher than MCP (lower y value = higher on screen)
+  // Tip is higher than MCP (lower y value = higher on screen)
     return lm[tip].y < lm[mcp].y;
   }
 

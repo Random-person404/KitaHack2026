@@ -15,11 +15,11 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDPqABTJedcN725i6zm3nsJqMlUSaaknqc', // Found in Firebase Console Settings
+    apiKey: 'AIzaSyDPqABTJedcN725i6zm3nsJqMlUSaaknqc', 
     appId: '1:173688024632:android:adc8eebe8bd5e3b03700cd', 
     messagingSenderId: '173688024632',
     projectId: 'asl-translator-448f0',
-     storageBucket: 'asl-translator-448f0.firebasestorage.app', // ✅ Fixed
+     storageBucket: 'asl-translator-448f0.firebasestorage.app', 
   );
 
   static const FirebaseOptions web = FirebaseOptions(
@@ -28,6 +28,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '173688024632',
     projectId: 'asl-translator-448f0',
     authDomain: 'asl-translator-448f0.firebaseapp.com',
-    storageBucket: 'asl-translator-448f0.firebasestorage.app', // ✅ Fixed
+    storageBucket: 'asl-translator-448f0.firebasestorage.app', 
   );
 }

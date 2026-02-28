@@ -6,7 +6,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'gestures_logic.dart';
 import 'services/ai_services.dart';
 import 'firebase_options.dart';
-import 'landmark_processor.dart';
 
 late List<CameraDescription> _cameras;
 
@@ -254,10 +253,7 @@ class _HandDetectionScreenState extends State<HandDetectionScreen>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ── Camera feed ──────────────────────────────────────────────
           CameraPreview(_controller!),
-
-          // ── Dark gradient overlay top ─────────────────────────────────
           Positioned(
             top: 0, left: 0, right: 0,
             height: 200,
@@ -272,7 +268,6 @@ class _HandDetectionScreenState extends State<HandDetectionScreen>
             ),
           ),
 
-          // ── Dark gradient overlay bottom ──────────────────────────────
           Positioned(
             bottom: 0, left: 0, right: 0,
             height: 320,
@@ -287,10 +282,10 @@ class _HandDetectionScreenState extends State<HandDetectionScreen>
             ),
           ),
 
-          // ── Landmarks ────────────────────────────────────────────────
+          // Landmarks 
           CustomPaint(painter: HandPainter(_hands)),
 
-          // ── App name top left ─────────────────────────────────────────
+          // App name
           Positioned(
             top: 52,
             left: 20,
@@ -362,7 +357,7 @@ class _HandDetectionScreenState extends State<HandDetectionScreen>
             ),
           ),
 
-          // ── Clear button top right ────────────────────────────────────
+          // Clear button 
           Positioned(
             top: 48,
             right: 16,
@@ -380,10 +375,10 @@ class _HandDetectionScreenState extends State<HandDetectionScreen>
             ),
           ),
 
-          // ── Big detected letter center ────────────────────────────────
+          // Big detected letter 
           Positioned(
             top: 100,
-            left: 0, //changed
+            left: 0, 
             right: 0,
             child: Center(
               child: ValueListenableBuilder<String>(
@@ -430,7 +425,7 @@ class _HandDetectionScreenState extends State<HandDetectionScreen>
             ),
           ),
 
-          // ── Bottom panel ──────────────────────────────────────────────
+          // Bottom panel 
           Positioned(
             bottom: 0,
             left: 0,
